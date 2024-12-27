@@ -24,29 +24,116 @@
 <script type="text/javascript">
   console.log("Hello world")
 
+  // function generate UUID
+  // https://stackoverflow.com/questions/105034/how-do-i-create-a-guid-uuid
+  function generateUUID() { // Public Domain/MIT
+    let d = new Date().getTime();//Timestamp
+    let d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now() * 1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      let r = Math.random() * 16;//random number between 0 and 16
+      if (d > 0) {//Use timestamp until depleted
+        r = (d + r) % 16 | 0;
+        d = Math.floor(d / 16);
+      } else {//Use microseconds since page-load if supported
+        r = (d2 + r) % 16 | 0;
+        d2 = Math.floor(d2 / 16);
+      }
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+  }
+
+
+  // split file chunks
   const CHUNK_SIZE = 512 * 1000    // 512kb
   let selectedFile = null
   const inputEl = document.getElementById("input-file")
   inputEl.addEventListener("change", handleFiles, false)
 
-
   function handleFiles() {
-    let fileList = this.files
-    selectedFile = fileList[0]
-    let fileSize = selectedFile.size
-    let fullChunks = Math.floor(fileSize / CHUNK_SIZE)
-    let remainedChunk = fileSize % CHUNK_SIZE
+    let selectedFile = this.files[0]
+    let fullChunks = Math.floor(selectedFile.size / CHUNK_SIZE)
 
     const fileSizeEl = document.getElementById("file-size")
-    fileSizeEl.innerHTML = "File size:" + fileSize
+    fileSizeEl.innerHTML = "File size:" + selectedFile.size
 
     const chunkCountEl = document.getElementById("chunk-count")
     chunkCountEl.innerHTML = "Count count:" + fullChunks
   }
 
+  // File Metadata Object
+  // metadata = {
+  //     order,
+  //     fileId,
+  //     offset,
+  //     limit,
+  //     fileSize,
+  //     fileName
+  // }
+
   async function handleClickUpload() {
     const singleUploadURL = "http://localhost:8080/upload"
     const chunkUploadURL = "http://localhost:8080/chunk-upload"
+
+    try {
+      const fileId = generateUUID()
+      const fileSize = selectedFile.size
+      const fileName = selectedFile.name
+      const fullChunks = Math.floor(fileSize / CHUNK_SIZE)
+      const remainedChunk = selectedFile.size % CHUNK_SIZE
+      let uploadCount = 0
+
+      if (fullChunks > 0) {
+        for (let i = 0; i < fullChunks; i++) {
+          const data = new FormData()
+          const offset = CHUNK_SIZE * i
+          const limit = CHUNK_SIZE * (i + 1)
+          const metadata = {
+            order: i,
+            fileId,
+            offset,
+            limit,
+            fileSize,
+            fileName
+          }
+
+          const chunkedFile = selectedFile.slice(offset, limit)
+          data.append('file', chunkedFile)
+          data.append('metadata', JSON.stringify(metadata))
+
+          const res = await fetch(chunkUploadURL, {
+            method: 'POST',
+            body: data
+          })
+
+          if (!res.ok) {
+            throw new Error("Response status:" + res.status);
+          }
+
+          const json = await res.json()
+          const fileUploadedCount = document.getElementById("uploaded-count")
+          uploadCount++
+          fileUploadedCount.innerHTML = "File uploaded count:" + uploadCount
+        }
+
+
+      } else {
+        // single upload
+        const data = new FormData()
+        data.append('file', selectedFile)
+
+        const res = await fetch(singleUploadURL, {
+          method: 'POST',
+          body: data
+        })
+
+        if (!res.ok) {
+          throw new Error("Response status:" + res.status);
+        }
+      }
+    }
+    catch (err) {
+      console.error("error click upload", err)
+    }
   }
 
 
