@@ -10,7 +10,7 @@
 <body>
   <div>
     <form>
-      <input type="file" id="input" accept="image/png, image/jpeg, .pdf" />
+      <input type="file" id="input-file" accept="image/png, image/jpeg, .pdf" />
       <button id="btn-upload">Upload</button>
     </form>
   </div>
@@ -24,7 +24,31 @@
 <script type="text/javascript">
   console.log("Hello world")
 
-  const CHUNKSIZE = 512 * 1000    // 512kb
+  const CHUNK_SIZE = 512 * 1000    // 512kb
+  let selectedFile = null
+  const inputEl = document.getElementById("input-file")
+  inputEl.addEventListener("change", handleFiles, false)
+
+
+  function handleFiles() {
+    let fileList = this.files
+    selectedFile = fileList[0]
+    let fileSize = selectedFile.size
+    let fullChunks = Math.floor(fileSize / CHUNK_SIZE)
+    let remainedChunk = fileSize % CHUNK_SIZE
+
+    const fileSizeEl = document.getElementById("file-size")
+    fileSizeEl.innerHTML = "File size:" + fileSize
+
+    const chunkCountEl = document.getElementById("chunk-count")
+    chunkCountEl.innerHTML = "Count count:" + fullChunks
+  }
+
+  async function handleClickUpload() {
+    const singleUploadURL = "http://localhost:8080/upload"
+    const chunkUploadURL = "http://localhost:8080/chunk-upload"
+  }
+
 
 </script>
 
