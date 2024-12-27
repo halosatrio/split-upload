@@ -3,7 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -76,8 +79,40 @@ func main() {
 
 				return orderI < orderJ
 			})
+
+			finalPath := filepath.Join("./uploads", fmt.Sprintf("merged_%s", metadata.FileName))
+			finalFile, err := os.Create(finalPath)
+			if err != nil {
+				c.String(http.StatusBadRequest, "error merging file: %s", err.Error())
+				return
+			}
+			defer finalFile.Close()
+
+			for _, chunk := range chunks {
+				chunkFile, err := os.Open(chunk)
+				if err != nil {
+					c.String(http.StatusBadRequest, "error open chunk file: %s", err.Error())
+					return
+				}
+
+				_, err = io.Copy(finalFile, chunkFile)
+				chunkFile.Close()
+
+				if err != nil {
+					c.String(http.StatusBadRequest, "error merging chunk file: %s", err.Error())
+					return
+				}
+			}
+
+			// remove chunks
+			for _, chunk := range chunks {
+				os.Remove(chunk)
+			}
+
+			log.Println("chunk upload success, merge chunk files")
 		}
 
+		c.SaveUploadedFile(file, "./uploads/temp/")
 		c.JSON(200, gin.H{
 			"status":  200,
 			"message": "success split upload",
