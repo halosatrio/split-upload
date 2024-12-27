@@ -115,6 +115,35 @@
           fileUploadedCount.innerHTML = "File uploaded count:" + uploadCount
         }
 
+        if (remainedChunk > 0) {
+          const data = new FormData()
+
+          const offset = fileSize - remainedChunk
+          const limit = fileSize
+          const metadata = {
+            order: fullChunks,
+            fileId,
+            offset,
+            limit,
+            fileSize,
+            fileName
+          }
+
+          const chunkedFile = selectedFile.slice(offset, limit)
+          data.append('file', chunkedFile)
+          data.append('metadata', JSON.stringify(metadata))
+
+          const res = await fetch(chunkUploadURL, {
+            method: 'POST',
+            body: data
+          })
+
+          if (!res.oke) {
+            throw new Error("Response status:" + res.status);
+          }
+          const json = await res.json()
+        }
+
 
       } else {
         // single upload
