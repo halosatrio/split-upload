@@ -9,10 +9,8 @@
 
 <body>
   <div>
-    <form>
-      <input type="file" id="input-file" accept="image/png, image/jpeg, .pdf" />
-      <button id="btn-upload">Upload</button>
-    </form>
+    <input type="file" id="input-file" accept="image/png, image/jpeg, .pdf" />
+    <button id="btn-upload">Upload</button>
   </div>
 
   <p>File size: <span id="file-size">0</span></p>
@@ -49,8 +47,11 @@
   const inputEl = document.getElementById("input-file")
   inputEl.addEventListener("change", handleFiles, false)
 
+  const buttonElement = document.getElementById("btn-upload");
+  buttonElement.addEventListener("click", handleClickUpload)
+
   function handleFiles() {
-    let selectedFile = this.files[0]
+    selectedFile = this.files[0]
     let fullChunks = Math.floor(selectedFile.size / CHUNK_SIZE)
 
     const fileSizeEl = document.getElementById("file-size")

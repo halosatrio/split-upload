@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,6 +26,7 @@ type Metadata struct {
 
 func main() {
 	r := gin.Default()
+	r.Use(cors.Default())
 
 	r.MaxMultipartMemory = 8 << 20 // 8 MiB
 
@@ -36,7 +38,7 @@ func main() {
 		}
 
 		filename := filepath.Base(file.Filename)
-		if err := c.SaveUploadedFile(file, "./uploads"+filename); err != nil {
+		if err := c.SaveUploadedFile(file, "./uploads/"+filename); err != nil {
 			c.String(http.StatusBadRequest, "upload file error: %s", err.Error())
 			return
 		}
